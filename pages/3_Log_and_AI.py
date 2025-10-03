@@ -1,1 +1,3 @@
-import streamlit as st; st.title('Log & AI Usage (WIP)')
+import streamlit as st 
+st.title("📝 Log & AI notes")
+
