@@ -61,17 +61,19 @@ mask = (df.index.to_period("M") >= start) & (df.index.to_period("M") <= end)
 d = df.loc[mask, numeric_cols].copy()  # subset of rows + only numeric columns
 
 # Optionally drop wind direction (angles 0–360° can dominate/mislead on shared axis)
-if exclude_dir:
-    for name in list(d.columns):
-        # Intent: drop columns whose name contains 'direction' (and/or degree symbol)
-        # NOTE: this condition is likely incorrect Python logic; see note below.
-        if "direction" in name.lower():
-            d.drop(columns=name, inplace=True, errors="ignore")
+
+
 
 # 5) Build the plot canvas
 fig, ax = plt.subplots()
 
 if choice == "All columns":
+    if exclude_dir:
+        for name in list(d.columns):
+            # Intent: drop columns whose name contains 'direction' (and/or degree symbol)
+            # NOTE: this condition is likely incorrect Python logic; see note below.
+            if "direction" in name.lower():
+                d.drop(columns=name, inplace=True, errors="ignore")
     # Normalize series to comparable scale if user asked (z-score)
     if normalize:
         d_plot = (d - d.mean()) / d.std(ddof=0)  # column-wise standardization

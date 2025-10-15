@@ -1,7 +1,8 @@
 import streamlit as st; 
-st.title('IND320 • Home')
+
 
 st.set_page_config(page_title="Open-Meteo Explorer", layout="wide")
+st.title('IND320 • Home')
 
 st.sidebar.header("Navigation")
 # Built-in page links (works in recent Streamlit versions)
