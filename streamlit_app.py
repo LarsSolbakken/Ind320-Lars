@@ -9,5 +9,5 @@ st.sidebar.header("Navigation")
 st.sidebar.page_link("streamlit_app.py", label="🏠 Home")
 st.sidebar.page_link("pages/1_Table.py", label="📊 Table")
 st.sidebar.page_link("pages/2_Plot.py", label="📈 Plot")
-st.sidebar.page_link("pages/3_Log_and_AI.py", label="📝 Log & AI notes")
+st.sidebar.page_link("pages/Electricity_Production.py", label="⚡ Electricity Production Dashboard (Elhub 2021)")
 
