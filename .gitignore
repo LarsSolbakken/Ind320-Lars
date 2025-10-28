@@ -1,0 +1,13 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.venv/
+
+# Streamlit secrets
+.streamlit/
+
+Project work, part 2/notes.py
+Project work, part 2/.ipynb_checkpoints/
