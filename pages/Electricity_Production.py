@@ -15,18 +15,23 @@ from pymongo import MongoClient
 # [mongo]
 # uri = "mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority"
 
-uri = st.secrets["mongo"]["uri"]   # get MongoDB URI from secrets
-client = MongoClient(uri)          # connect to MongoDB Atlas
-db = client["elhub2021"]           # use database "elhub2021"
-collection = db["production_per_group_hour"]  # collection with production data
+# Use caching so MongoDB connection and data load are not repeated every rerun
+@st.cache_resource
+def get_mongo_client():
+    uri = st.secrets["mongo"]["uri"]   # get MongoDB URI from secrets
+    return MongoClient(uri)            # connect to MongoDB Atlas
 
-# Load all MongoDB documents into a pandas DataFrame
-# Exclude "_id" field since it is only MongoDB's internal ID
-docs = list(collection.find({}, {"_id": 0}))
-df = pd.DataFrame(docs)
+@st.cache_data
+def load_data():
+    client = get_mongo_client()
+    db = client["elhub2021"]           # use database "elhub2021"
+    collection = db["production_per_group_hour"]  # collection with production data
+    docs = list(collection.find({}, {"_id": 0}))  # Load all MongoDB documents
+    df = pd.DataFrame(docs)            # Convert to pandas DataFrame
+    df["starttime"] = pd.to_datetime(df["starttime"], errors="coerce")  # Ensure timestamps
+    return df
 
-# Ensure timestamps are parsed as datetime objects
-df["starttime"] = pd.to_datetime(df["starttime"], errors="coerce")
+df = load_data()
 
 # -------------------------
 # Streamlit UI setup
