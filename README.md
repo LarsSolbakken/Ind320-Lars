@@ -10,13 +10,13 @@ It includes a Jupyter Notebook and a Streamlit app.
 - `requirements.txt` – package requirements  
 
 ## Streamlit app
-👉 [https://ind320-lars.streamlit.app]
+👉 [https://ind320-lars-goeqtbwxguxey2shc4qfus.streamlit.app] 
 
 ## GitHub repo
-👉 [https://github.com/LarsSolbakken/Ind320-Lars]
+👉 [https://github.com/LarsSolbakken/Ind320-Lars/tree/part2-streamlit]
 
 ## Jupyter Notebook
-👉  [https://github.com/LarsSolbakken/Ind320-Lars/blob/main/Project%20work%2C%20part%201/IND320ProjectWorkPart%201.ipynb] 
+👉  [https://github.com/LarsSolbakken/Ind320-Lars/blob/part2-streamlit/Project%20work%2C%20part%202/IND320ProjectWorkPart%202.ipynb]  
 
 ## Description
 The project includes:
@@ -26,4 +26,4 @@ The project includes:
   - Page 1: Home  
   - Page 2: Data table with LineChartColumn for the first month  
   - Page 3: Plot with column and month selection  
-  - Page 4: Log and AI usage
+  - Page 4: Electricity Production in Norway (Elhub 2021)  
