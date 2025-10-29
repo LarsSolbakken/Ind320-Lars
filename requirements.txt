@@ -3,3 +3,5 @@ pandas
 altair
 matplotlib
 numpy
+seaborn
+pymongo
