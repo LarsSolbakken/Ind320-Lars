@@ -32,6 +32,11 @@ def load_data():
     return df
 
 df = load_data()
+st.session_state["elhub_data"] = df
+
+
+
+
 
 # -------------------------
 # Streamlit UI setup
@@ -62,11 +67,31 @@ price_area_names = {
 # -------------------------
 st.subheader("Filters")
 
-# Radio button selector for price area
-# User sees human-friendly labels, but filtering still uses NO1–NO5 codes
+
+# --- Create radio buttons for selecting price area ---
+# price_areas contains codes like ['NO1', 'NO2', ...]
 price_areas = sorted(df["pricearea"].unique())
-selected_label = st.radio("Select Price Area", [price_area_names[p] for p in price_areas], horizontal=True)
+
+# Display area names (e.g. “NO1 – Oslo”) instead of codes
+selected_label = st.radio(
+    "Select Price Area",
+    [price_area_names[p] for p in price_areas],
+    horizontal=True
+)
+
+# Convert selected label back to area code (e.g. “NO1”)
 selected_area = [k for k, v in price_area_names.items() if v == selected_label][0]
+
+# Store selection in Streamlit session state for global access
+st.session_state["selected_area"] = selected_area
+
+# --- Map area → representative city for weather data ---
+area2city = {"NO1": "Oslo", "NO2": "Kristiansand", "NO3": "Trondheim", "NO4": "Tromsø", "NO5": "Bergen"}
+
+# Save the matching city name in session state for other pages (e.g. Table & Plot)
+st.session_state["selected_city"] = area2city[selected_area]
+
+
 
 # Month range slider (choose start and end month)
 months = pd.date_range("2021-01-01", "2021-12-01", freq="MS")
