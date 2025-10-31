@@ -5,3 +5,7 @@ matplotlib
 numpy
 seaborn
 pymongo
+scikit-learn
+scipy
+statsmodels
+
