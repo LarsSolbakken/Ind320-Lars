@@ -1,29 +1,51 @@
 # IND320 Compulsory Work – Lars Solbakken
 
-This repository contains my project work for the course IND320.  
-It includes a Jupyter Notebook and a Streamlit app.
+This repository contains my project work for the course **IND320 – Data-Driven Digitalization**.  
+It includes both a **Jupyter Notebook** (analysis and documentation) and a **Streamlit web app**.
 
-## Contents
-- `IND320_compulsory_work.ipynb` – Jupyter Notebook with analysis, plots, and log  
-- `pages/` – Streamlit app pages  
-- `open-meteo-subset.csv` – dataset used  
-- `requirements.txt` – package requirements  
+---
 
-## Streamlit app
-👉 [https://ind320-lars-goeqtbwxguxey2shc4qfus.streamlit.app] 
+## 📁 Contents
+- `IND320_part3.ipynb` – Jupyter Notebook with full analysis, functions, and log  
+- `utils.py` – Helper functions for STL, spectrogram, outlier and anomaly detection  
+- `pages/` – Streamlit sub-pages (Table, Plot, STL & Spectrogram, Outliers & Anomalies, etc.)  
+- `requirements.txt` – Dependencies for Streamlit Cloud  
 
-## GitHub repo
-👉 [https://github.com/LarsSolbakken/Ind320-Lars/tree/part2-streamlit]
+---
 
-## Jupyter Notebook
-👉  [https://github.com/LarsSolbakken/Ind320-Lars/blob/part2-streamlit/Project%20work%2C%20part%202/IND320ProjectWorkPart%202.ipynb]  
+## 🌐 Streamlit app  
+👉 [https://ind320-lars-d2bn5njskcftffxrf9cvi9.streamlit.app](https://ind320-lars-d2bn5njskcftffxrf9cvi9.streamlit.app)
 
-## Description
+---
+
+## 💻 GitHub repository  
+👉 [https://github.com/LarsSolbakken/Ind320-Lars/tree/streamlit%2C-part3](https://github.com/LarsSolbakken/Ind320-Lars/tree/streamlit%2C-part3)
+
+---
+
+## 📓 Jupyter Notebook  
+👉 [https://github.com/LarsSolbakken/Ind320-Lars/blob/streamlit%2C-part3/Project%20work%2C%20part%203/IND320ProjectWorkPart%203.ipynb](https://github.com/LarsSolbakken/Ind320-Lars/blob/streamlit%2C-part3/Project%20work%2C%20part%203/IND320ProjectWorkPart%203.ipynb) 
+
+---
+
+## 📜 Description
 The project includes:
-- Reading and exploring the dataset  
-- Plotting each column and all columns together  
-- A Streamlit app with:  
-  - Page 1: Home  
-  - Page 2: Data table with LineChartColumn for the first month  
-  - Page 3: Plot with column and month selection  
-  - Page 4: Electricity Production in Norway (Elhub 2021)  
+- API connection to **Open-Meteo (ERA5 reanalysis)** for live weather data  
+- STL decomposition and spectrograms based on **Elhub production data**  
+- Detection of **temperature outliers** (SPC + DCT) and **precipitation anomalies** (LOF)  
+- A multi-page **Streamlit app**:
+  1. 🏠 Home  
+  2. 📊 Table (data preview)  
+  3. 📈 Plot (time-series visualization)  
+  4. ⚡ Electricity Production (Elhub 2021)  
+  5. 🔍 STL & Spectrogram  
+  6. 🌡️ Outliers & Anomalies  
+
+---
+
+## 🤖 AI usage
+ChatGPT (GPT-5) was used for:
+- Structuring the notebook and explaining formulas  
+- Writing and documenting Python functions  
+- Adding comments and Markdown formatting  
+- Debugging and improving Streamlit page logic
