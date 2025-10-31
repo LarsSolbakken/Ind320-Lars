@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 st.title("📈 Plot")
 
 # Path to the local CSV file shipped with the app
-CSV_PATH = Path("open-meteo-subset.csv")
+# CSV_PATH = Path("open-meteo-subset.csv")
 
 @st.cache_data(show_spinner=False)
 def load_data(path: Path) -> pd.DataFrame:
@@ -30,31 +30,85 @@ def load_data(path: Path) -> pd.DataFrame:
     return df
 
 # --- Load data (cached) ---
-df = load_data(CSV_PATH)
+# df = load_data(CSV_PATH)
+df = st.session_state.get("df_weather")
+if df is None:
+    st.warning("Please select a city and year on the Table page first.")
+    st.stop()
+
+# --- Display current dataset info ---
+city = st.session_state.get("selected_city", "Unknown city")
+year = st.session_state.get("selected_year", "Unknown year")
+
+st.markdown(f"### 🌍 Showing data for **{city} ({year})**")
+st.caption("Data fetched from the Open-Meteo API and stored in session state.")
+
 
 # 2) Pick numeric columns we can plot (ints/floats)
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 if not numeric_cols:
     st.warning("No numeric columns found."); st.stop()
 
-# 3) UI controls
+# # 3) UI controls
+# # Derive the list of months present in the data (as Periods), sorted
+# months = pd.Index(df.index.to_period("M")).unique().sort_values()
+
+# # Range slider over months; default = first month only
+# start, end = st.select_slider(
+#     "Select month range",
+#     options=months,
+#     value=(months[0], months[0]),
+#     format_func=lambda p: p.strftime("%Y-%m"),  # pretty label like 2024-01
+# ) 
+
+# # Dropdown to choose a single column or all columns
+# choice = st.selectbox("Column", ["All columns"] + numeric_cols, index=0)
+
+# # Optional helpers for nicer "all columns" plots
+# exclude_dir = st.checkbox("Exclude wind direction (°)", value=True)
+# normalize   = st.checkbox("Normalize when plotting all columns (z-score)", value=True)
+# --- Remember last settings using st.session_state ---
+
+# Get defaults from session if they exist, else use initial defaults
+default_months = st.session_state.get("plot_months")
+default_choice = st.session_state.get("plot_choice", "All columns")
+default_exclude = st.session_state.get("plot_exclude", True)
+default_norm = st.session_state.get("plot_normalize", True)
+
 # Derive the list of months present in the data (as Periods), sorted
 months = pd.Index(df.index.to_period("M")).unique().sort_values()
 
-# Range slider over months; default = first month only
+# If user has visited before, restore previous month selection
+if default_months and all(m in months for m in default_months):
+    start, end = default_months
+else:
+    start, end = months[0], months[0]
+
+# Range slider with remembered values
 start, end = st.select_slider(
     "Select month range",
     options=months,
-    value=(months[0], months[0]),
-    format_func=lambda p: p.strftime("%Y-%m"),  # pretty label like 2024-01
+    value=(start, end),
+    format_func=lambda p: p.strftime("%Y-%m"),
 )
 
-# Dropdown to choose a single column or all columns
-choice = st.selectbox("Column", ["All columns"] + numeric_cols, index=0)
+# Dropdown to choose column (remembered)
+choice = st.selectbox(
+    "Column",
+    ["All columns"] + numeric_cols,
+    index=(["All columns"] + numeric_cols).index(default_choice)
+)
 
-# Optional helpers for nicer "all columns" plots
-exclude_dir = st.checkbox("Exclude wind direction (°)", value=True)
-normalize   = st.checkbox("Normalize when plotting all columns (z-score)", value=True)
+# Checkboxes with remembered states
+exclude_dir = st.checkbox("Exclude wind direction (°)", value=default_exclude)
+normalize = st.checkbox("Normalize when plotting all columns (z-score)", value=default_norm)
+
+# 🧠 Save all user choices in session_state
+st.session_state["plot_months"] = (start, end)
+st.session_state["plot_choice"] = choice
+st.session_state["plot_exclude"] = exclude_dir
+st.session_state["plot_normalize"] = normalize
+
 
 # 4) Filter rows to the selected month window (mask is True for rows inside range)
 mask = (df.index.to_period("M") >= start) & (df.index.to_period("M") <= end)

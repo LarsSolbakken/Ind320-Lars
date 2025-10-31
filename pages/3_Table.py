@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import numpy as np
+from utils import download_weather
 
 # Page title in the Streamlit app
 st.title('📊 Table')
 
 # Path to the local CSV file shipped with the app
-CSV_PATH = Path("open-meteo-subset.csv")
+# CSV_PATH = Path("open-meteo-subset.csv")
 
 @st.cache_data(show_spinner=False)
 def load_data(path: Path) -> pd.DataFrame:
@@ -32,8 +33,35 @@ def load_data(path: Path) -> pd.DataFrame:
 
     return df
 
+city_coordinates = {
+    "Oslo": {"lon": 10.75, "lat": 59.91},
+    "Kristiansand": {"lon": 8.00, "lat": 58.15},
+    "Trondheim": {"lon": 10.40, "lat": 63.43},
+    "Tromsø": {"lon": 18.96, "lat": 69.65},
+    "Bergen": {"lon": 5.32, "lat": 60.39}
+}
+
+# --- Restore previous selections if they exist ---
+default_city = st.session_state.get("selected_city", "Oslo")
+default_year = st.session_state.get("selected_year", 2019)
+
+city = st.selectbox("Select city", list(city_coordinates.keys()), index=list(city_coordinates.keys()).index(default_city))
+year = st.number_input("Year", 2019, 2024, default_year)
+
+coords = city_coordinates[city]
+
+# Fetch data from Open-Meteo
+df = download_weather(coords["lon"], coords["lat"], year)
+
+# ✅ Fix: make 'time' the index
+df = df.set_index("time").sort_index()
+
+# Save to session state
+st.session_state["selected_city"] = city
+st.session_state["selected_year"] = year
+st.session_state["df_weather"] = df
 # --- Load the dataset (cached) ---
-df = load_data(CSV_PATH)
+# df = load_data(CSV_PATH)
 
 # Identify which columns are numeric (ints/floats) — those are the variables we’ll summarize/plot
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
@@ -67,3 +95,4 @@ st.dataframe(
     use_container_width=True,  # stretch to page width
     hide_index=True,           # cleaner look without row numbers
 )
+# st.experimental_rerun()
