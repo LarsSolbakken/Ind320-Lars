@@ -33,8 +33,27 @@ tab1, tab2 = st.tabs(["Temperature Outliers (SPC)", "Precipitation Anomalies (LO
 # --- Tab 1: SPC Outlier Detection (Temperature) ---
 with tab1:
     st.subheader("SPC-based Outlier Detection (Temperature)")
+     # --- User controls ---
+    cutoff = st.slider(
+        "DCT frequency cutoff (smoothness)",
+        min_value=20,
+        max_value=300,
+        value=100,   # default
+        help="Lower = smoother seasonal trend (more outliers). Higher = more fluctuation (fewer outliers)."
+    )
+    std_mult = st.slider(
+        "SPC threshold multiplier (strictness)",
+        min_value=1.0,
+        max_value=4.0,
+        value=2.0,
+        step=0.1,
+        help="Lower = stricter limits (more outliers). Higher = wider limits (fewer outliers)."
+    )
     # Run SPC + DCT outlier detection function from utils.py
-    fig, summary, thresholds = detect_outliers(df_weather["temperature_2m"])
+    # --- Run detection with user-selected parameters ---
+    fig, summary, thresholds = detect_outliers(df_weather["temperature_2m"],
+        cutoff=cutoff,
+        std_mult=std_mult)
     # Display resulting plot
     st.pyplot(fig)
     # Display numeric summary of outliers
@@ -43,8 +62,13 @@ with tab1:
 # --- Tab 2: LOF Anomaly Detection (Precipitation) ---
 with tab2:
     st.subheader("LOF-based Anomaly Detection (Precipitation)")
+    contamination = st.slider(
+        "Expected anomaly proportion (contamination)",
+        min_value=0.001, max_value=0.0100, value=0.0100, step=0.001,
+        help="Amount of data expected to be anomalies. Higher = more anomalies detected."
+    )
     # Run Local Outlier Factor anomaly detection
-    fig, summary, anomalies = detect_anomalies(df_weather["precipitation"])
+    fig, summary, anomalies = detect_anomalies(df_weather["precipitation"], proportion=contamination)
     # Show the plot and summary
     st.pyplot(fig)
     st.write("Summary:", summary)

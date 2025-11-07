@@ -49,46 +49,90 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import dct, idct
 
+# def detect_outliers(temp_series, cutoff=100, std_mult=2):
+#     """
+#     Detect temperature outliers using DCT high-pass filter + SPC.
+    
+#     Parameters:
+#         temp_series (pd.Series): Time-indexed temperature series
+#         cutoff (int): Frequency cutoff for DCT filtering (lower = smoother seasonal component removed)
+#         std_mult (float): Number of std deviations for SPC boundaries
+    
+#     Returns:
+#         fig, ax, outliers_df
+#     """
+#     # --- Step 1: Apply DCT ---
+#     values = temp_series.values
+#     dct_coeff = dct(values, norm="ortho")  # transform
+    
+#     # Zero out low-frequency terms (keep only seasonal-adjusted variations)
+#     dct_coeff[:cutoff] = 0
+#     satv = idct(dct_coeff, norm="ortho")
+    
+#     # --- Step 2: SPC boundaries ---
+#     mean = np.mean(satv)
+#     std = np.std(satv)
+#     upper = mean + std_mult * std
+#     lower = mean - std_mult * std
+    
+#     # Outliers = where SATV is outside bounds
+#     mask_outliers = (satv > upper) | (satv < lower)
+#     outliers_df = temp_series[mask_outliers]
+    
+#     # --- Step 3: Plot ---
+#     fig, ax = plt.subplots(figsize=(12,6))
+#     ax.plot(temp_series.index, temp_series.values, label="Temperature", alpha=0.7)
+#     ax.scatter(outliers_df.index, outliers_df.values, color="red", label="Outliers")
+#     ax.axhline(upper, color="green", linestyle="--", label=f"+{std_mult}σ")
+#     ax.axhline(lower, color="green", linestyle="--", label=f"-{std_mult}σ")
+#     ax.set_title("Temperature Outlier Detection (SPC + DCT)")
+#     ax.set_ylabel("Temperature (°C)")
+#     ax.legend()
+    
+#     return fig, ax, outliers_df
+
 def detect_outliers(temp_series, cutoff=100, std_mult=2):
     """
-    Detect temperature outliers using DCT high-pass filter + SPC.
-    
-    Parameters:
-        temp_series (pd.Series): Time-indexed temperature series
-        cutoff (int): Frequency cutoff for DCT filtering (lower = smoother seasonal component removed)
-        std_mult (float): Number of std deviations for SPC boundaries
-    
-    Returns:
-        fig, ax, outliers_df
+    Detect temperature outliers using DCT high-pass filter + SPC,
+    with boundaries that follow the seasonal trend.
     """
-    # --- Step 1: Apply DCT ---
     values = temp_series.values
-    dct_coeff = dct(values, norm="ortho")  # transform
-    
-    # Zero out low-frequency terms (keep only seasonal-adjusted variations)
-    dct_coeff[:cutoff] = 0
-    satv = idct(dct_coeff, norm="ortho")
-    
-    # --- Step 2: SPC boundaries ---
+
+    # --- DCT transform ---
+    dct_coeff = dct(values, norm="ortho")
+
+    # High-frequency component (seasonally adjusted temp variation)
+    dct_coeff_high = dct_coeff.copy()
+    dct_coeff_high[:cutoff] = 0
+    satv = idct(dct_coeff_high, norm="ortho")  # seasonal adjusted variation
+
+    # Low-frequency seasonal trend (baseline)
+    dct_coeff_low = dct_coeff.copy()
+    dct_coeff_low[cutoff:] = 0
+    seasonal = idct(dct_coeff_low, norm="ortho")  # smooth seasonal curve
+
+    # SPC limits on SATV (not raw temp)
     mean = np.mean(satv)
     std = np.std(satv)
-    upper = mean + std_mult * std
-    lower = mean - std_mult * std
-    
-    # Outliers = where SATV is outside bounds
-    mask_outliers = (satv > upper) | (satv < lower)
+
+    upper = seasonal + (mean + std_mult * std)
+    lower = seasonal + (mean - std_mult * std)
+
+    # Identify outliers using limits
+    mask_outliers = (values > upper) | (values < lower)
     outliers_df = temp_series[mask_outliers]
-    
-    # --- Step 3: Plot ---
+
+    # --- Plot ---
     fig, ax = plt.subplots(figsize=(12,6))
-    ax.plot(temp_series.index, temp_series.values, label="Temperature", alpha=0.7)
+    ax.plot(temp_series.index, values, label="Temperature", alpha=0.6)
     ax.scatter(outliers_df.index, outliers_df.values, color="red", label="Outliers")
-    ax.axhline(upper, color="green", linestyle="--", label=f"+{std_mult}σ")
-    ax.axhline(lower, color="green", linestyle="--", label=f"-{std_mult}σ")
-    ax.set_title("Temperature Outlier Detection (SPC + DCT)")
+    ax.plot(temp_series.index, upper, '--', color="green", label=f"+{std_mult}σ")
+    ax.plot(temp_series.index, lower, '--', color="green", label=f"-{std_mult}σ")
+
+    ax.set_title("Temperature Outlier Detection (Seasonal SPC + DCT)")
     ax.set_ylabel("Temperature (°C)")
     ax.legend()
-    
+
     return fig, ax, outliers_df
 
 
