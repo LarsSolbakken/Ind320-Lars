@@ -138,7 +138,7 @@ def detect_outliers(temp_series, cutoff=100, std_mult=2):
 
 from sklearn.neighbors import LocalOutlierFactor
 
-def detect_anomalies(series, proportion=0.005):
+def detect_anomalies(series, n_neighbors=20, proportion=0.005):
     """
     Detect precipitation anomalies using Local Outlier Factor (LOF).
     
@@ -150,8 +150,8 @@ def detect_anomalies(series, proportion=0.005):
         fig, ax, anomalies_df
     """
     values = series.values.reshape(-1, 1)
-    
-    lof = LocalOutlierFactor(n_neighbors=20, contamination=proportion)
+
+    lof = LocalOutlierFactor(n_neighbors=n_neighbors, contamination=proportion)
     preds = lof.fit_predict(values)  # -1 = anomaly, 1 = normal
     
     mask_anomalies = preds == -1

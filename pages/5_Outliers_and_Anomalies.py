@@ -64,7 +64,7 @@ with tab2:
     st.subheader("LOF-based Anomaly Detection (Precipitation)")
     contamination = st.slider(
         "Expected anomaly proportion (contamination)",
-        min_value=0.001, max_value=0.0100, value=0.0100, step=0.001,
+        min_value=0.001, max_value=0.0500, value=0.0100, step=0.001, format="%.3f",
         help="Amount of data expected to be anomalies. Higher = more anomalies detected."
     )
     # Run Local Outlier Factor anomaly detection
