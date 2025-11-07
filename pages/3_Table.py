@@ -43,7 +43,7 @@ city_coordinates = {
 
 # --- Restore previous selections if they exist ---
 default_city = st.session_state.get("selected_city", "Oslo")
-default_year = st.session_state.get("selected_year", 2019)
+default_year = st.session_state.get("selected_year", 2021)
 
 city = st.selectbox("Select city", list(city_coordinates.keys()), index=list(city_coordinates.keys()).index(default_city))
 year = st.number_input("Year", 2019, 2024, default_year)
@@ -53,8 +53,8 @@ coords = city_coordinates[city]
 # Fetch data from Open-Meteo
 df = download_weather(coords["lon"], coords["lat"], year)
 
-# ✅ Fix: make 'time' the index
-df = df.set_index("time").sort_index()
+# # ✅ Fix: make 'time' the index
+# df = df.set_index("time").sort_index()
 
 # Save to session state
 st.session_state["selected_city"] = city
