@@ -8,4 +8,6 @@ pymongo
 scikit-learn
 scipy
 statsmodels
-
+plotly
+streamlit_folium
+folium

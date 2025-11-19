@@ -1,19 +1,30 @@
 import streamlit as st; 
 
 
-st.set_page_config(page_title="Open-Meteo Explorer", layout="wide")
-st.title('IND320 • Home')
+import streamlit as st
 
-st.sidebar.header("Navigation")
-# Built-in page links (works in recent Streamlit versions)
-# st.sidebar.page_link("streamlit_app.py", label="🏠 Home")
-# st.sidebar.page_link("pages/1_Table.py", label="📊 Table")
-# st.sidebar.page_link("pages/2_Plot.py", label="📈 Plot")
-# st.sidebar.page_link("pages/Electricity_Production.py", label="⚡ Electricity Production Dashboard (Elhub 2021)")
+st.set_page_config(page_title="IND320 • Home", layout="wide")
 
-st.sidebar.page_link("streamlit_app.py", label="🏠 Home")
-st.sidebar.page_link("pages/1_Electricity_Production.py", label="⚡ Electricity Production Dashboard (Elhub 2021)")
-st.sidebar.page_link("pages/2_STL_and_Spectrogram.py", label="📊 STL & Spectrogram")
-st.sidebar.page_link("pages/3_Table.py", label="📊 Table")
-st.sidebar.page_link("pages/4_Plot.py", label="📈 Plot")
-st.sidebar.page_link("pages/5_Outliers_and_Anomalies.py", label="🔍 Outliers & Anomalies")
+st.title("🏠 IND320 — Energy & Meteorology Explorer")
+
+st.markdown("""
+Welcome to your IND320 project app.
+
+Use the sidebar to navigate through:
+- **Map & Area Analysis**
+- **Electricity Production**
+- **Exploratory Data Analysis (Tables, Plots, STL, Anomalies)**
+- **Meteorology ↔ Production Correlation**
+- **Forecasting (SARIMAX)**
+- **Snow Drift Modelling**
+
+This app integrates:
+- Elhub production & consumption data (2021–2024)
+- Open-Meteo weather data
+- Statistical analyses
+- Time-series decomposition
+- Forecasting
+- Snow transport physics
+
+Good luck with your final submission! 🚀
+""")
