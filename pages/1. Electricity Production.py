@@ -1,40 +1,30 @@
 import streamlit as st 
-st.title("⚡ Electricity Production in Norway (Elhub 2021)")
+st.title("⚡ Electricity Production in Norway (Elhub 2021-2024)")
+
 
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pymongo import MongoClient
+import plotly.express as px
+from utils.db import load_production_data
 
-# -------------------------
-# Connect to MongoDB Atlas
-# -------------------------
-# Connection string is stored securely in .streamlit/secrets.toml
-# Example format in secrets.toml:
-# [mongo]
-# uri = "mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority"
 
-# Use caching so MongoDB connection and data load are not repeated every rerun
-@st.cache_resource
-def get_mongo_client():
-    uri = st.secrets["mongo"]["uri"]   # get MongoDB URI from secrets
-    return MongoClient(uri)            # connect to MongoDB Atlas
 
-@st.cache_data
-def load_data():
-    client = get_mongo_client()
-    db = client["elhub2021"]           # use database "elhub2021"
-    collection = db["production_per_group_hour"]  # collection with production data
-    docs = list(collection.find({}, {"_id": 0}))  # Load all MongoDB documents
-    df = pd.DataFrame(docs)            # Convert to pandas DataFrame
-    df["starttime"] = pd.to_datetime(df["starttime"], errors="coerce")  # Ensure timestamps
-    return df
 
-df = load_data()
+
+# Load all production data from MongoDB (wrapped in utils/db)
+df = load_production_data()
+
+# Store the full DataFrame in Streamlit's session state so it can be
+# re-used across multiple pages without reloading from MongoDB.
 st.session_state["elhub_data"] = df
 
+# Extract which calendar years are present in the dataset.
+# This is shown to users as metadata about data coverage.
+years = sorted(df["starttime"].dt.year.unique())
 
+# Display available years under the title as a small caption.
+st.caption(f"Available years in database: {', '.join(map(str, years))}")
 
 
 
@@ -93,14 +83,22 @@ st.session_state["selected_city"] = area2city[selected_area]
 
 
 
-# Month range slider (choose start and end month)
-months = pd.date_range("2021-01-01", "2021-12-01", freq="MS")
+#  Month range slider (choose start and end month)
+
+min_date = df["starttime"].min()
+max_date = df["starttime"].max()
+
+# Create month labels dynamically
+months = pd.date_range(min_date, max_date, freq="MS")
+
+# Year–month slider
 start, end = st.select_slider(
-    "Select month range",
+    "Select time range",
     options=months,
-    value=(months[0], months[-1]),   # default = full year
-    format_func=lambda p: p.strftime("%B")  # display month names
+    value=(months[0], months[-1]),
+    format_func=lambda p: p.strftime("%b %Y")
 )
+
 
 # Split page into two columns (pie chart left, line plot right)
 col1, col2 = st.columns(2)
@@ -109,12 +107,13 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Total Production by Group")
    
-    # Filter dataset by selected area + month range
+   
     df_area = df[
-        (df["pricearea"] == selected_area) &
-        (df["starttime"].dt.month >= start.month) &
-        (df["starttime"].dt.month <= end.month)
+    (df["pricearea"] == selected_area) &
+    (df["starttime"] >= start) &
+    (df["starttime"] <= end)
     ]
+
 
     # Aggregate total production per group
     totals = df_area.groupby("productiongroup")["quantitykwh"].sum()
@@ -123,11 +122,18 @@ with col1:
     st.metric("Total Production (GWh)", f"{totals.sum()/1e6:.1f}")
 
     # Pie chart showing share of each production group
-    fig1, ax1 = plt.subplots(figsize=(8, 6))
-    totals.plot(kind="pie", autopct='%1.1f%%', ax=ax1, colors=[colors[g] for g in totals.index])
-    ax1.set_ylabel("")
-    ax1.set_title(f"Total Production in {selected_area}, 2021")
-    st.pyplot(fig1)
+
+
+    fig1 = px.pie(
+        values=totals.values,
+        names=totals.index,
+        color=totals.index,
+        color_discrete_map=colors,
+        title=f"Total Production in {selected_area}"
+)
+
+    st.plotly_chart(fig1, use_container_width=True)
+
 
 # ---- Right Column: Line Plot ----
 with col2:
@@ -159,22 +165,25 @@ with col2:
         st.warning("No data available for this selection.")
     else:
         # Line plot of hourly production, grouped by production group
-        fig2, ax2 = plt.subplots(figsize=(8, 6))
-        sns.lineplot(
-            data=df_range,
-            x="starttime", y="quantitykwh",
-            hue="productiongroup", palette=colors,
-            ax=ax2
+        fig2 = px.line(
+            df_range,
+            x="starttime",
+            y="quantitykwh",
+            color="productiongroup",
+            color_discrete_map=colors,
+            title=f"Production in {selected_area}, {start.strftime('%b %Y')} – {end.strftime('%b %Y')}"
         )
 
-        # Title includes selected area and month range
-        ax2.set_title(
-            f"Production in {selected_area}, "
-            f"{start.strftime('%B')} – {end.strftime('%B')} 2021"
+        fig2.update_layout(
+            # height=350,
+            # margin=dict(l=10, r=10, t=40, b=10),
+            xaxis_title="Date",
+            yaxis_title="kWh",
+            legend_title="Production Group"
         )
-        ax2.set_xlabel("Date")
-        ax2.set_ylabel("kWh")
-        st.pyplot(fig2)
+
+        st.plotly_chart(fig2, use_container_width=True)
+
 
         # Table: total production per group in GWh
         summary = df_range.groupby("productiongroup")["quantitykwh"].sum().reset_index()
