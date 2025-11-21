@@ -114,7 +114,32 @@ group = st.selectbox("Energy Group:", available_groups)
 # Choose date interval from full dataset range
 start_d = df["starttime"].min().date()
 end_d  = df["starttime"].max().date()
-start_date, end_date = st.date_input("Select date range:", [start_d, end_d])
+
+
+# ---- STEP 1: Initialize defaults once ----
+if "default_start" not in st.session_state:
+    st.session_state.default_start = start_d
+if "default_end" not in st.session_state:
+    st.session_state.default_end = end_d
+
+# ---- STEP 2: Use stable defaults in the widget ----
+date_range = st.date_input(
+    "Select date range:",
+    [st.session_state.default_start, st.session_state.default_end],
+    key="date_range_selector"
+)
+
+# ---- STEP 3: Extract selected dates safely ----
+if len(date_range) == 2:
+    start_date, end_date = date_range
+else:
+    start_date = st.session_state.default_start
+    end_date   = st.session_state.default_end
+
+# Convert to datetime and make end inclusive
+start_dt = pd.to_datetime(start_date)
+end_dt   = pd.to_datetime(end_date) + pd.Timedelta(days=1)
+
 
 
 # =========================================================
@@ -122,22 +147,22 @@ start_date, end_date = st.date_input("Select date range:", [start_d, end_d])
 # =========================================================
 # Filter by chosen group + date interval
 filtered = df[
-    (df[col_group] == group) &
-    (df["starttime"] >= pd.to_datetime(start_date)) &
-    (df["starttime"] <= pd.to_datetime(end_date))
+    (df[col_group] == group)
+    & (df["starttime"] >= start_dt)
+    & (df["starttime"] < end_dt)
 ]
+sums = filtered.groupby("pricearea")["quantitykwh"].sum    ().reset_index()
+sums["ElSpotOmr"] = sums["pricearea"].str.replace(r"NO(\d)", r"NO \1", regex=True)
 
-# Compute mean kWh for each price area
-means = filtered.groupby("pricearea")["quantitykwh"].mean().reset_index()
-
-# Convert "NO1" → "NO 1" to match GeoJSON naming convention
-means["ElSpotOmr"] = means["pricearea"].str.replace(r"NO(\d)", r"NO \1", regex=True)
 
 # Map: Feature ID → mean value (used later for info panel)
 value_map = {}
 for fid, area_name in id_to_name.items():
-    if area_name in means["ElSpotOmr"].values:
-        value_map[fid] = means.loc[means["ElSpotOmr"] == area_name, "quantitykwh"].values[0]
+    if area_name in sums["ElSpotOmr"].values:
+        value_map[fid] = sums.loc[sums["ElSpotOmr"] == area_name, "quantitykwh"].values[0]
+    else:
+        value_map[fid] = None
+
 
 # Missing areas get default value (shown as None)
 DEFAULT_VALUE = None
@@ -258,4 +283,6 @@ with info_col:
         st.write("Area: Outside price areas")
     else:
         st.write(f"Area: {id_to_name.get(sel, 'Unknown')}")
-        st.write(f"Value: {value_map.get(sel, 0):,.2f} kWh")
+        label = "Total Production" if data_type == "Production" else "Total Consumption"
+        st.write(f"{label} for selected period: {value_map.get(sel, 0):,.2f} kWh")
+
