@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -12,39 +12,6 @@ import plotly.graph_objects as go
 st.title("📈 Plot")
 
 
-# =========================================================
-# OPTIONAL: CSV LOADING FUNCTION (kept for completeness)
-# =========================================================
-@st.cache_data(show_spinner=False)
-def load_data(path: Path) -> pd.DataFrame:
-    """
-    Load and preprocess a local CSV file.
-    
-    Caching ensures:
-    - File is only read once per session
-    - Speedy reloads during reruns
-    
-    Pipeline:
-      1) Read CSV.
-      2) Check for required 'time' column.
-      3) Convert 'time' strings → datetime.
-      4) Drop invalid timestamps.
-      5) Set time as index and sort chronologically.
-    """
-    df = pd.read_csv(path)
-
-    # Ensure the column exists before processing further
-    if "time" not in df.columns:
-        st.error("Expected a 'time' column in the CSV.")
-        st.stop()  # Stop page execution safely
-
-    # Parse datetime; invalid entries become NaT
-    df["time"] = pd.to_datetime(df["time"], errors="coerce")
-
-    # Cleanup: drop NaT rows, set index, sort
-    df = df.dropna(subset=["time"]).set_index("time").sort_index()
-
-    return df
 
 
 # =========================================================

@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
 import numpy as np
 # from utils import download_weather   # old import, replaced by updated module
-from utils.weather import download_weather
+from utils.weather import download_weather2
 
 
 # =========================================================
@@ -11,43 +10,6 @@ from utils.weather import download_weather
 # =========================================================
 # Displayed at the top of the Streamlit page
 st.title('📊 Table')
-
-
-# =========================================================
-# OPTIONAL: LOAD LOCAL CSV (NOT USED IN THIS PAGE ANYMORE)
-# =========================================================
-# This function remains for reference and reproducibility if
-# you ever switch back to using a bundled CSV instead of API.
-@st.cache_data(show_spinner=False)
-def load_data(path: Path) -> pd.DataFrame:
-    """
-    Load and preprocess a local CSV file.
-
-    Caching ensures:
-      - The file is only read once per session
-      - The page reloads instantly on re-rerun
-
-    Steps:
-      1. Read CSV into pandas.
-      2. Ensure a 'time' column exists.
-      3. Convert the 'time' column to proper datetime.
-      4. Drop rows with invalid timestamps.
-      5. Index by 'time' and ensure chronological sorting.
-    """
-    df = pd.read_csv(path)
-
-    # Safety check: required column must be present
-    if "time" not in df.columns:
-        st.error("Expected a 'time' column in the CSV.")
-        st.stop()
-
-    # Convert 'time' strings → datetime objects; invalid as NaT
-    df["time"] = pd.to_datetime(df["time"], errors="coerce")
-
-    # Remove invalid rows, index by 'time', and sort chronologically
-    df = df.dropna(subset=["time"]).set_index("time").sort_index()
-
-    return df
 
 
 # =========================================================
@@ -97,7 +59,7 @@ coords = city_coordinates[city]
 #   - Calls the Open-Meteo API
 #   - Returns a cleaned pandas DataFrame
 #   - Ensures 'time' is datetime and used as index
-df = download_weather(coords["lon"], coords["lat"], year)
+df = download_weather2(coords["lon"], coords["lat"], year)
 
 
 # =========================================================

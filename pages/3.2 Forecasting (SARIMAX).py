@@ -67,7 +67,16 @@ df_wide = (
     .sort_index()
 )
 
+
+
+
 energy_vars = df_wide.columns.tolist()
+# Making "other" appear last
+if "other" in energy_vars:
+    energy_vars = sorted([g for g in energy_vars if g != "other"]) + ["other"]
+else:
+    energy_vars = sorted(energy_vars)
+
 if not energy_vars:
     st.error("No production groups found for this price area.")
     st.stop()
