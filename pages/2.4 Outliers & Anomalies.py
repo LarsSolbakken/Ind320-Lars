@@ -95,7 +95,7 @@ with tab1:
     #   - summary: numeric summary (counts, thresholds, etc.)
     #   - thresholds: exact upper/lower SPC bounds
     fig, summary, thresholds = detect_outliers(
-        df_weather["temperature_2m"],
+        df_weather["temperature_2m (°C)"],
         cutoff=cutoff,
         std_mult=std_mult
     )
@@ -138,7 +138,7 @@ with tab2:
     #   - summary: detection statistics
     #   - anomalies: list of anomaly timestamps
     fig, summary, anomalies = detect_anomalies(
-        df_weather["precipitation"],
+        df_weather["precipitation (mm)"],
         proportion=contamination
     )
 

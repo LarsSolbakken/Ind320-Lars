@@ -100,7 +100,9 @@ meteo_vars = ["temperature_2m", "precipitation", "wind_speed_10m", "wind_directi
 
 # Everything else = energy variables (production + consumption groups)
 energy_vars = [c for c in df.columns if c not in ["time"] + meteo_vars]
-
+# Force "other" to appear last
+if "other" in energy_vars:
+    energy_vars = [v for v in energy_vars if v != "other"] + ["other"]
 col1, col2 = st.columns(2)
 with col1:
     meteo = st.selectbox("Meteorological variable", meteo_vars)

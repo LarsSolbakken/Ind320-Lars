@@ -1,8 +1,7 @@
 streamlit
 pandas
-altair
-matplotlib
 numpy
+matplotlib
 seaborn
 pymongo
 scikit-learn
@@ -11,3 +10,7 @@ statsmodels
 plotly
 streamlit_folium
 folium
+shapely
+pyspark
+python-dotenv
+requests

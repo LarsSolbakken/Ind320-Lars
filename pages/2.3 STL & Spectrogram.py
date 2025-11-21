@@ -1,7 +1,7 @@
 import streamlit as st
-# from utils import stl_decompose, make_spectrogram   # old import path
+
 from utils.plots import stl_decompose, make_spectrogram
-import matplotlib.pyplot as plt
+
 import plotly.graph_objects as go
 
 
@@ -46,7 +46,26 @@ with tab1:
 
     # Dropdown for selecting which production group to analyze
     # Only hydro and wind implemented in utilities.
-    group = st.selectbox("Production group", ["hydro", "wind"])
+    # Compute total production per group
+    prod_totals = (
+    elhub_data
+    .groupby("productiongroup")["quantitykwh"]
+    .sum()
+    .sort_values(ascending=False)
+)
+
+# Convert to sorted list
+    groups = prod_totals.index.tolist()
+
+# Force "others" to always be last
+    others_names = ["others", "other", "Other", "OTHERS"]
+    existing_others = [g for g in groups if g in others_names]
+
+    for oth in existing_others:
+        groups.remove(oth)
+        groups.append(oth)
+
+    group = st.selectbox("Production group", groups)
 
     # Perform the STL decomposition (Trend + Seasonal + Residual)
     # stl_decompose() returns a ready-to-display Plotly figure.
@@ -68,7 +87,26 @@ with tab2:
 
     # Allow user to select production group (hydro or wind)
     # Must use a different key than previous selectbox to avoid Streamlit conflicts.
-    group = st.selectbox("Production group", ["hydro", "wind"], key="spectro_group")
+# Compute total production per group
+    prod_totals = (
+    elhub_data
+    .groupby("productiongroup")["quantitykwh"]
+    .sum()
+    .sort_values(ascending=False)
+)
+
+# Convert to sorted list
+    groups = prod_totals.index.tolist()
+
+# Force "others" to always be last
+    others_names = ["others", "other", "Other", "OTHERS"]
+    existing_others = [g for g in groups if g in others_names]
+
+    for oth in existing_others:
+        groups.remove(oth)
+        groups.append(oth)
+
+    group = st.selectbox("Production group", groups, key="spectro_group")
 
     # Generate spectrogram via utility function
     # Spectrogram visualizes energy over frequency components across time.
