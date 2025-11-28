@@ -144,7 +144,8 @@ fig_rose.add_trace(
         theta=angles_deg,
         width=[360/num_sectors] * num_sectors,
         marker_line_color="black",
-        marker_line_width=1
+        marker_line_width=1,
+        hovertemplate="<b>%{theta}°</b><br>Qt = %{r:.1f} tonnes/m<extra></extra>"
     )
 )
 
@@ -152,7 +153,7 @@ fig_rose.update_layout(
     polar=dict(
         radialaxis=dict(title="Qt [tonnes/m]", visible=True)
     ),
-    title="Wind rose (directional snow transport)",
+    title=f"Average directional transport • Overall Qt ≈ {overall_avg_Qt/1000:.2f} tonnes/m",
     height=600
 )
 

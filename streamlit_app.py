@@ -13,6 +13,7 @@ Welcome to your IND320 project app.
 Use the sidebar to navigate through:
 - **Map & Area Analysis**
 - **Electricity Production**
+- **Electricity Consumption**
 - **Exploratory Data Analysis (Tables, Plots, STL, Anomalies)**
 - **Meteorology ↔ Production Correlation**
 - **Forecasting (SARIMAX)**
@@ -26,5 +27,5 @@ This app integrates:
 - Forecasting
 - Snow transport physics
 
-Good luck with your final submission! 🚀
+
 """)

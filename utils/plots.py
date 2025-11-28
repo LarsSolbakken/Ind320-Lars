@@ -51,10 +51,16 @@ def detect_outliers(temp_series, cutoff=100, std_mult=2):
     seasonal = idct(dct_coeff_low, norm="ortho")
 
     # SPC control limits following seasonal baseline
-    mean = np.mean(satv)
-    std = np.std(satv)
-    upper = seasonal + (mean + std_mult * std)
-    lower = seasonal + (mean - std_mult * std)
+    # mean = np.mean(satv)
+    # std = np.std(satv)
+    # upper = seasonal + (mean + std_mult * std)
+    # lower = seasonal + (mean - std_mult * std)
+    median = np.median(satv)
+    mad = np.median(np.abs(satv - median))  # robust scale
+    robust_std = 1.4826 * mad               # convert MAD → std-equivalent
+
+    upper = seasonal + (median + std_mult * robust_std)
+    lower = seasonal + (median - std_mult * robust_std)
 
     # Detect when observed temperature exceeds limits
     mask_outliers = (values > upper) | (values < lower)

@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-# from utils import download_weather2     
 from utils.weather import download_weather2
 
 
@@ -12,36 +11,47 @@ from utils.weather import download_weather2
 st.set_page_config(page_title="Sliding Window Correlation", layout="wide")
 st.title("📈 Sliding Window Correlation: Weather vs Energy")
 
+# Predefined representative coordinates for each price area
+# These ensure weather is taken from the central city of that area
+area_coords = {
+    "NO1": (59.91, 10.75),   # Oslo
+    "NO2": (58.15, 8.00),    # Kristiansand
+    "NO3": (63.43, 10.39),   # Trondheim
+    "NO4": (69.65, 18.96),   # Tromsø
+    "NO5": (60.39, 5.33),    # Bergen
+}
+
 
 # =========================================================
-# REQUIRE A COORDINATE FROM THE MAP PAGE
+# REQUIRE SELECTED AREA FROM OTHER PAGES
 # =========================================================
-# The user clicks a point on the Price Area Map.
-# That coordinate is stored in st.session_state["last_pin"].
+# The map page sets last_pin, and the Production/Consumption pages
+# store selected_area into session_state.
 if "last_pin" not in st.session_state:
+    # We still check last_pin so the user must visit the map page first.
     st.error("No coordinate selected on the map page. Please choose a point.")
     st.stop()
 
-lat, lon = st.session_state["last_pin"]
-st.write(f"Using coordinate: {lat:.4f}°N  {lon:.4f}°E")
+# Instead of using the exact clicked coordinate, we now use
+# the representative city of the selected price area.
+area = st.session_state.get("selected_area", "NO1")
+lat, lon = area_coords[area]
+
+st.write(f"Using representative weather location for {area}: {lat:.4f}°N, {lon:.4f}°E")
 
 
 # =========================================================
-# LOAD WEATHER + ENERGY DATA
+# LOAD WEATHER DATA (Open-Meteo)
 # =========================================================
-with st.spinner("Loading meteorology and energy data…"):
-
-    # -----------------------------------------------------
-    # 1) METEOROLOGY (Open-Meteo) — cached in utils.weather
-    # -----------------------------------------------------
+with st.spinner("Loading meteorology data…"):
+    # Download hourly weather for the selected location and year
     df_weather = download_weather2(lon, lat, 2023).copy()
 
-    # download_weather2 returns a DataFrame indexed by time.
-    # Convert index → column so merging becomes easier.
+    # Move index into a normal column for merging later
     df_weather["time"] = df_weather.index
     df_weather = df_weather.reset_index(drop=True)
 
-    # Standardize column names for consistent processing later
+    # Standardize column names for consistency through the app
     df_weather = df_weather.rename(columns={
         "temperature_2m (°C)": "temperature_2m",
         "precipitation (mm)": "precipitation",
@@ -49,87 +59,99 @@ with st.spinner("Loading meteorology and energy data…"):
         "wind_direction_10m (°)": "wind_direction_10m",
     })
 
-    # -----------------------------------------------------
-    # 2) ENERGY (production + consumption) — from MongoDB
-    # -----------------------------------------------------
+
+# =========================================================
+# SELECT ENERGY KIND (Production or Consumption)
+# =========================================================
+st.subheader("Energy kind")
+energy_kind = st.radio(
+    "Select energy dataset",
+    ["Production", "Consumption"],
+    horizontal=True
+)
+
+
+# =========================================================
+# LOAD SELECTED ENERGY DATA
+# =========================================================
+# Data is stored in session_state by the corresponding pages.
+if energy_kind == "Production":
     if "elhub_data" not in st.session_state:
-        st.error("❌ No energy data found. Go to the Electricity Production page first.")
+        st.error("Production data missing — load it on the Production page first.")
         st.stop()
-
     df_energy = st.session_state["elhub_data"].copy()
-
-    # Unify timestamp column so weather+energy can be merged
-    df_energy = df_energy.rename(columns={"starttime": "time"})
-    df_energy["time"] = pd.to_datetime(df_energy["time"], errors="coerce")
-
-    # Pivot production OR consumption group columns into wide format:
-    # Each group becomes one column containing kWh values per hour.
-    df_energy_wide = df_energy.pivot_table(
-        index="time",
-        columns="productiongroup" if "productiongroup" in df_energy.columns else "consumptiongroup",
-        values="quantitykwh",
-        aggfunc="sum"
-    )
-
-    # If dataset contains consumption data, pivot and join as well
-    if "consumptiongroup" in df_energy.columns:
-        df_cons_wide = df_energy.pivot_table(
-            index="time",
-            columns="consumptiongroup",
-            values="quantitykwh",
-            aggfunc="sum"
-        )
-        df_energy_wide = df_energy_wide.join(df_cons_wide, how="outer")
-
-    # Reset index to turn "time" into a normal column
-    df_energy_wide = df_energy_wide.reset_index()
-    df_energy_wide.columns.name = None
-
-    # -----------------------------------------------------
-    # 3) MERGE WEATHER + ENERGY ON TIMESTAMP
-    # -----------------------------------------------------
-    df = df_weather.merge(df_energy_wide, on="time", how="inner")
-    df = df.sort_values("time")
+else:
+    if "consumption_data" not in st.session_state:
+        st.error("Consumption data missing — load it on the Consumption page first.")
+        st.stop()
+    df_energy = st.session_state["consumption_data"].copy()
 
 
 # =========================================================
-# VARIABLE SELECTION (Weather vs Energy)
+# CLEAN & PREPARE ENERGY DATAFRAME
 # =========================================================
-# Meteorological variables available from Open-Meteo
+# Rename timestamp column for consistency
+df_energy = df_energy.rename(columns={"starttime": "time"})
+df_energy["time"] = pd.to_datetime(df_energy["time"], errors="coerce")
+
+# Consumption group names are renamed to avoid clashes with production names
+if "consumptiongroup" in df_energy.columns:
+    df_energy["consumptiongroup"] = df_energy["consumptiongroup"].astype(str) + "_cons"
+
+# Pivot long energy data into wide form: one column per group
+pivot_col = "productiongroup" if "productiongroup" in df_energy.columns else "consumptiongroup"
+
+df_energy_wide = df_energy.pivot_table(
+    index="time",
+    columns=pivot_col,
+    values="quantitykwh",
+    aggfunc="sum"
+).reset_index()
+
+
+# =========================================================
+# MERGE WEATHER + ENERGY ON TIMESTAMP
+# =========================================================
+df = df_weather.merge(df_energy_wide, on="time", how="inner").sort_values("time")
+
+
+# =========================================================
+# VARIABLE SELECTION (weather vs energy)
+# =========================================================
+# Available meteorological variables
 meteo_vars = ["temperature_2m", "precipitation", "wind_speed_10m", "wind_direction_10m"]
 
-# Everything else = energy variables (production + consumption groups)
+# All other columns except time + weather = energy groups
 energy_vars = [c for c in df.columns if c not in ["time"] + meteo_vars]
-# Force "other" to appear last
-if "other" in energy_vars:
-    energy_vars = [v for v in energy_vars if v != "other"] + ["other"]
+
+# Sort energy variables but push "other" columns to the end for readability
+energy_vars = sorted(energy_vars, key=lambda x: ("other" in x.lower(), x))
+
+# Two dropdowns for selecting what to correlate
 col1, col2 = st.columns(2)
 with col1:
     meteo = st.selectbox("Meteorological variable", meteo_vars)
 with col2:
-    energy = st.selectbox("Energy variable (production & consumption)", energy_vars)
+    energy = st.selectbox("Energy variable", energy_vars)
 
 
 # =========================================================
-# LAG AND WINDOW SETTINGS
+# LAG + ROLLING WINDOW SETTINGS
 # =========================================================
-# Lag units = hours.
-# Negative lag: weather leads energy
-# Positive lag: energy follows weather
+# Lag shifts weather variable forward/backward in time (in hours)
 lag = st.slider("Lag (hours)", -48, 48, 0)
 
-# Rolling window determines smoothing of the correlation curve
+# Rolling window controls the smoothing of correlation
 window = st.slider("Window length (hours)", 6, 336, 72)
 
 
 # =========================================================
-# APPLY LAG + ROLLING CORRELATION
+# COMPUTE ROLLING CORRELATION
 # =========================================================
-# Shift meteorological variable forward/backward in time
+# Apply lag to meteorology variable
 df["meteo_shifted"] = df[meteo].shift(lag)
 
-# Compute rolling Pearson correlation between:
-#    shifted meteorology vs energy variable
+# Rolling Pearson correlation between shifted weather and selected energy variable
 df["corr"] = (
     df["meteo_shifted"]
     .rolling(window)
@@ -138,7 +160,7 @@ df["corr"] = (
 
 
 # =========================================================
-# INTERACTIVE PLOTLY FIGURE
+# CORRELATION PLOT
 # =========================================================
 fig = px.line(
     df,
@@ -150,13 +172,46 @@ fig = px.line(
 
 fig.update_layout(
     yaxis_title="Correlation",
-    xaxis_title="Time",
+    xaxis_title="Time"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Extra hint to guide user exploration
+
+# =========================================================
+# NORMALIZED COMPARISON PLOT (Z-score)
+# =========================================================
+st.subheader("Normalized comparison of meteorology and energy signals")
+
+# Z-score normalization to compare variables on the same scale
+def zscore(x):
+    if x.std() == 0:           # Avoid division-by-zero errors
+        return x - x.mean()
+    return (x - x.mean()) / x.std()
+
+# Normalize both selected series
+df["meteo_norm"] = zscore(df["meteo_shifted"])
+df["energy_norm"] = zscore(df[energy])
+
+# Combined plot showing both normalized series
+fig_norm = px.line(
+    df,
+    x="time",
+    y=["meteo_norm", "energy_norm"],
+    labels={"value": "Z-score", "variable": "Series"},
+    title=f"Normalized comparison: {meteo} vs {energy}",
+    height=400,
+)
+
+fig_norm.update_layout(legend_title_text="Series")
+
+st.plotly_chart(fig_norm, use_container_width=True)
+
+
+# =========================================================
+# USER HINT
+# =========================================================
 st.info(
-    "Try adjusting **lag** and **window size**. "
-    "Observe how correlation changes during storms or weather extremes."
+    "Try adjusting lag and window size. "
+    "Large deviations often correspond to storms or high-wind events."
 )
