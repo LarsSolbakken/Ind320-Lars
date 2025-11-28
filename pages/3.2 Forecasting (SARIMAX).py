@@ -152,13 +152,13 @@ col1, col2 = st.columns(2)
 with col1:
     target = st.selectbox("Target energy variable to forecast", energy_vars)
 
-with col2:
-    energy_exog_candidates = [c for c in energy_vars if c != target]
-    exog_selected_energy = st.multiselect(
-        "Energy exogenous variables",
-        options=energy_exog_candidates,
-        default=[],
-    )
+# with col2:
+#     energy_exog_candidates = [c for c in energy_vars if c != target]
+#     exog_selected_energy = st.multiselect(
+#         "Energy exogenous variables",
+#         options=energy_exog_candidates,
+#         default=[],
+#     )
 
 # Weather exogenous variables — optional, more advanced
 selected_weather_exog = st.multiselect(
@@ -237,25 +237,21 @@ y_future_actual = y.loc[future_index]
 # =========================================================
 st.subheader("5️⃣ SARIMAX parameters & exogenous matrix")
 
-# Start with energy exog variables
-df_exog_all = None
-if exog_selected_energy:
-    df_exog_all = df_wide[exog_selected_energy].copy()
+# # Start with energy exog variables
+# df_exog_all = None
+# if exog_selected_energy:
+#     df_exog_all = df_wide[exog_selected_energy].copy()
 
 # If weather exog selected → download matching weather values
+df_exog_all = None
+
 if selected_weather_exog:
     with st.spinner("Downloading and aligning weather data…"):
         df_weather_full = get_weather_for_index(selected_area, y.index)
 
-    # Keep only selected weather variables
     weather_cols = [c for c in selected_weather_exog if c in df_weather_full.columns]
-    df_weather_sel = df_weather_full[weather_cols]
+    df_exog_all = df_weather_full[weather_cols].copy()
 
-    # Combine with existing exog (if any)
-    if df_exog_all is None:
-        df_exog_all = df_weather_sel
-    else:
-        df_exog_all = df_exog_all.join(df_weather_sel, how="left")
 
 # Clean and fill exog matrix (SARIMAX cannot handle NaNs)
 if df_exog_all is not None:
