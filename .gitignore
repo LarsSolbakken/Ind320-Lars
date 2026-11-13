@@ -7,7 +7,7 @@ __pycache__/
 .venv/
 
 # Streamlit secrets
-.streamlit/
+.streamlit/*
 
 notes.py
 utils_gammel.py
@@ -19,3 +19,6 @@ Project work, part 2/.ipynb_checkpoints/
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
+# Streamlit secrets file (explicit)
+.streamlit/secrets.toml
+!.streamlit/secrets.toml.example
